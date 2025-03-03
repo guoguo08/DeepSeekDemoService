@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, jsonify
 import random
 import time
 
+from db.db import save_data
 from llm.llm_main import chat_response, format_response
 
 
@@ -13,7 +14,7 @@ def generate_results(query):
     time.sleep(random.random())  # 模拟处理延迟
     
     # chat_response 耗时较长
-    chat_result = chat_response(query)
+    company_id, chat_result = chat_response(query)
     if chat_result is None:
         return [{"title": f"无产品推荐", 
                  "url": "", 
@@ -28,9 +29,12 @@ def generate_results(query):
         dynamic_results.append({
             "title": f"{product['产品名称']}",
             "url": f"推荐理由: {product['推荐理由']}",
-            "description": f"金融封控点: {product['金融封控注意事项']}",
+            "description": f"金融风控点: {product['金融风控注意事项']}",
         })
     
+    # 本地保存json格式的chat_response结果
+    save_data(company_id, chat_result)
+
     return dynamic_results
 
 
@@ -51,4 +55,4 @@ def search():
 
 if __name__ == '__main__':
     # app.run(debug=True, port=5000)
-    app.run(port=5000)
+    app.run(host='0.0.0.0', port=5000)

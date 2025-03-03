@@ -7,8 +7,11 @@ BASE_URL="http://localhost:11434/api/"
 
 class LLM:
 
-    def __init__(self, base_url=BASE_URL):
-        self.base_url = base_url
+    def __init__(self, base_url=None):
+        if base_url is None:
+            self.base_url = BASE_URL
+        else:
+            self.base_url = base_url
 
     def chat(self, prompt=None, model='deepseek-r1:1.5b', dialogue=[], role='user', stream=False):
         """

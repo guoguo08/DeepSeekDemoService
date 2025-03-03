@@ -10,9 +10,10 @@
     <div class="container">
         <div class="search-box">
             <img src="{{ url_for('static', filename='logo.png') }}" alt="Logo" class="logo">
-            <form id="searchForm" onsubmit="return false;">
+            <!-- 关键修改：移除 onsubmit 属性 -->
+            <form id="searchForm">
                 <div class="search-container">
-                    <input type="text" id="searchInput" name="q" autocomplete="off">
+                    <input type="text" id="searchInput" name="q" autocomplete="off" placeholder="企业名称/统一社会信用代码">
                     <button type="submit" id="searchButton">搜索</button>
                 </div>
             </form>
@@ -22,19 +23,22 @@
     </div>
 
     <script>
-        // 搜索功能实现
+        // 搜索功能实现（添加按钮禁用逻辑）
         const performSearch = async () => {
-            const query = document.getElementById('searchInput').value;
-            const resultsContainer = document.getElementById('searchResults');
+            const btn = document.getElementById('searchButton');
+            btn.disabled = true;  // 禁用按钮防止重复点击
             
-            if (!query) {
-                resultsContainer.innerHTML = '<p class="empty-tip">请输入搜索内容</p>';
-                return;
-            }
-
-            resultsContainer.innerHTML = '<div class="loading">正在搜索中...</div>';
-
             try {
+                const query = document.getElementById('searchInput').value;
+                const resultsContainer = document.getElementById('searchResults');
+                
+                if (!query) {
+                    resultsContainer.innerHTML = '<p class="empty-tip">请输入企业名称/统一社会信用代码</p>';
+                    return;
+                }
+
+                resultsContainer.innerHTML = '<div class="loading">正在搜索中...</div>';
+
                 const response = await fetch('/search', {
                     method: 'POST',
                     headers: {
@@ -69,13 +73,15 @@
                 resultsContainer.innerHTML = html;
             } catch (error) {
                 resultsContainer.innerHTML = `<p class="error">搜索失败：${error.message}</p>`;
+            } finally {
+                btn.disabled = false;  // 总是恢复按钮状态
             }
         };
 
-        // 绑定事件
-        document.getElementById('searchButton').addEventListener('click', performSearch);
-        document.getElementById('searchInput').addEventListener('keypress', (e) => {
-            if (e.key === 'Enter') performSearch();
+        // 统一表单提交事件处理（解决重复请求问题）
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();  // 阻止默认提交行为
+            await performSearch();
         });
     </script>
 </body>
