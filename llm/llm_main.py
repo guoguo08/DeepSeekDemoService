@@ -40,12 +40,46 @@ def whole_prompt(product_list, rule_list, company_json, product_num=3):
     以json格式回答。"""
 
 
+def is_chinese_company_name_strict(input_str):
+    # 正则表达式：匹配中文字符、英文字符、数字和特定符号
+    pattern = re.compile(r'^[\u4e00-\u9fa5a-zA-Z0-9()（）·\-]{2,50}$')
+    if not pattern.match(input_str):
+        return False
+    
+    # 检查是否包含中文字符
+    if not re.search(r'[\u4e00-\u9fa5]', input_str):
+        return False
+    
+    # 检查英文字符和数字的比例
+    non_chinese_count = len(re.findall(r'[a-zA-Z0-9]', input_str))
+    total_length = len(input_str)
+    if non_chinese_count / total_length > 0.5:  # 非中文字符比例超过 50%
+        return False
+    
+    return True
+
+
+def is_unified_social_credit_code(input_str):
+    # 正则表达式：匹配 18 位的数字和大写字母
+    pattern = re.compile(r'^[A-Z0-9]{18}$')
+    return bool(pattern.match(input_str))
+
+
 def chat_response(query):
 
     config_obj = Config()
     company_json = config_obj.match_company(query)
     if company_json is None:
-        return None, None
+        if is_chinese_company_name_strict(query):
+            # 根据企业名称进行推荐
+            company_json = {"统一社会信用代码": query, "企业名称": query}
+        elif is_unified_social_credit_code(query):
+            # 仅有统一社会信用代码，直接返回None
+            company_json = {"统一社会信用代码": query}
+            return company_json['统一社会信用代码'], None
+        else:
+            # 企业信息不存在，直接返回None
+            return None, None
 
     if query_data(f"key is '{company_json['统一社会信用代码']}'") != {}:
         data = get_data(company_json['统一社会信用代码'])
@@ -56,18 +90,15 @@ def chat_response(query):
         # question = personal_question(company_json)
         # personal_prompt = sys_prompt(context, question)
 
-        personal_prompt = whole_prompt(product_list, rule_list, company_json)
+        personal_prompt = whole_prompt(product_list, rule_list, 
+                                       company_json, config_obj.config['PRODUCT_NUM'])
         logger.info(f'prompt: {personal_prompt}.')
 
         llm_chat = LLM(config_obj.config['BASE_URL'])
-        result = llm_chat.chat(prompt=personal_prompt, model=config_obj.config['LLM_MODEL'])
+        result = llm_chat.chat(personal_prompt, config_obj.config['LLM_MODEL'])
         data = json.loads(result)['response']
 
     logger.info(f"response: {data['content']}.")
-    # # 用于演示的示例数据
-    # data = {'role': 'assistant', 
-    #         'content': '<think>\n好，我现在需要帮用户推荐两笔贷款产品给xx公司。首先，我得看看公司的基本信息：成立时间是2019年，注册资本1000万，经营范围是软件开发，行业分类是信息技术，公司规模在100到500人之间，法人张三是企业家，背景是大学毕业生。\n\n接下来，我要分析每个贷款产品的条件和用途是否符合公司的需求。首先看“企业经营贷款”产品，它的担保方式是抵押，用途也是企业经营，适用条件是企业有稳定经营和还款能力，这些都符合xx公司的情况。参考利率5.9%看起来比较合理，但要注意金融风控政策。根据之前的回答，金融风控可能会影响利率，建议用户先咨询当地银行或政府，了解最新的利率调整情况。\n\n然后是“企业创新贷款”，担保方式也是抵押，用途同样是企业创新，条件同样符合公司的稳定经营和创新能力需求。参考利率3.9%~5%，也在合理范围内。但同样，金融风控方面，可能需要提前查看具体的政策，是否影响利率或申请流程。\n\n再看“企业扩张贷款”，担保是保证，用途也是企业扩张，适用条件符合公司的稳定性。参考利率5.9%，看起来有点高，但可能因为业务规模扩大而更高。注意事项里提到企业需提供真实有效的企业信息，这可能意味着需要核实相关资料，或者担心数据安全。\n\n最后是“企业经营贷款”，但这个产品好像有问题，它的担保方式是保证，用途也是企业经营，但参考利率只有3.56%。这比其他产品低很多，可能更适合资金有限的企业，但如果xx公司有充足的资金需求，可能不适用。不过，结合公司规模和注册资本100万，可能适合。\n\n综合考虑，推荐“企业创新贷款”和“企业扩张贷款”。因为这两个产品都有抵押担保，并且适用于企业的经营或创新需求，特别是对于初创公司的来说，创新贷款可能更合适。另外，“企业扩张贷款”的利率有点高，但如果公司规模扩大了，这个产品可能是更适合的选择。\n</think>\n\n根据你的查询和提供的贷款产品列表，结合你公司的信息：“xx公司”，我会推荐以下两笔适合的贷款产品：\n\n### 1. **企业创新贷款**\n   - **推荐理由**：该贷款产品的担保方式为抵押，并且用途是“企业创新”。这符合公司所从事的“软件开发”业务，特别是如果公司正在开拓新的业务领域或进行技术创新，则可能更适合。另外，贷款期限和参考利率也适合企业的成长需求。\n   - **金融风控注意事项**：建议在收到贷款申请后，提前咨询当地金融机构关于金融风控政策的具体信息，以了解可能的利率调整或申请限制情况。\n\n### 2. **企业扩张贷款**\n   - **推荐理由**：该贷款产品的担保方式为保证，并且用途是“企业扩张”。这适合公司规模较大的情况（100-500人），特别是如果公司需要扩大业务规模，以增加利润和提高现金流。另外，贷款期限和参考利率也较为合理。\n   - **金融风控注意事项**：建议在收到贷款申请后，提前查看当地金融局或银行关于“企业扩张”业务的最新政策信息，了解是否有额外的限制或调整。\n\n### 注意事项：\n- 请确保在推荐产品时关注公司的具体情况和市场环境，必要时应进行实地考察。\n- 如果你所在地区的金融政策有特别的规定，请务必及时了解，并在申请过程中做好充分准备。'}
-
     return company_json['统一社会信用代码'], data
 
 

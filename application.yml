@@ -1,13 +1,15 @@
-
 # BASE_URL: "http://localhost:11434/api/"
 BASE_URL: "http://192.168.10.67:11434/api/"
 
 # LLM_MODEL: "deepseek-r1:1.5b"
-# LLM_MODEL: "deepseek-r1:7b"
 LLM_MODEL: "deepseek-r1:14b"
 
+# product_num
+PRODUCT_NUM: 3
+
 # FILE PATH
-company_path: "./config/company.csv"
-product_path: "./config/product.csv"
-product1_path: "./config/product1.csv"
-rule_path: "./config/rule.csv"
+# company_path: "./config/company.csv"
+# product_path: "./config/product.csv"
+# rule_path: "./config/rule.csv"
+company_path: "./config/company_demo.csv"
+product_path: "./config/product_demo.csv"

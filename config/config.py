@@ -1,5 +1,5 @@
+import os
 import csv
-import json
 import yaml
 
 
@@ -39,8 +39,27 @@ class Config:
                     product_name in product["产品名称"]:
                 matched_product = product
                 break  # 如果只需要找到第一个匹配项，就使用break退出循环
-        
-        # 输出匹配的公司信息
+
+        for key, value in matched_product.items():
+            # 如果值是字符串，则移除空格
+            if isinstance(value, str):
+                matched_product[key] = value.replace(" ", "")
+
+        GUARANT_TYPE = {
+            '1': '抵押',
+            '2': '质押',
+            '3': '信用',
+            '4': '保证',
+            '5': '保险保单',
+            '6': '知识产权',
+            '7': '应收账款'
+        }
+        if '担保方式' in matched_product:
+            matched_product['担保方式'] = matched_product['担保方式'].split(',')
+            matched_product['担保方式'] = '/'.join([GUARANT_TYPE[guarant_type] for 
+                                          guarant_type in matched_product['担保方式']])
+
+        # 输出匹配的产品信息
         if matched_product:
             return matched_product
         else:
@@ -69,10 +88,7 @@ class Config:
         产品信息
         """
         # 定义CSV文件的路径
-        if match:
-            csv_file_path = self.config['product_path']
-        else:
-            csv_file_path = self.config['product1_path']
+        csv_file_path = self.config['product_path']
 
         # 读取CSV文件并转换为JSON格式
         data = []
@@ -81,23 +97,26 @@ class Config:
             csvreader = csv.DictReader(csvfile)
             for row in csvreader:
                 # 将每行数据添加到列表中
-                data.append(row)
-
+                if match:
+                    data.append(row)
+                else:
+                    data.append({
+                        '产品名称': row['产品名称'],
+                        '产品标签': row['产品标签']
+                        })
         return data
 
     def rule_config(self):
         """
         推荐规则信息
         """
-        # 定义CSV文件的路径
-        csv_file_path = self.config['rule_path']
-
-        # 读取CSV文件并转换为JSON格式
         data = []
-        with open(csv_file_path, mode='r', encoding='utf-8') as csvfile:
-            for line in csvfile:
-                # 将每行数据添加到列表中
-                data.append(line)
+        if 'rule_path' in self.config and os.path.exists(self.config['rule_path']):
+            # 读取CSV文件并转换为JSON格式
+            with open(self.config['rule_path'], mode='r', encoding='utf-8') as csvfile:
+                for line in csvfile:
+                    # 将每行数据添加到列表中
+                    data.append(line)
 
         return data
 
