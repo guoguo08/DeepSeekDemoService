@@ -1,9 +1,11 @@
 from flask import Flask, render_template, request, jsonify
 import random
 import time
+import datetime
 
 from db.db import save_data
-from llm.llm_main import chat_response, format_response
+from config.common import Product
+from llm.llm_main import chat_response, format_response, format_query_response
 
 
 app = Flask(__name__)
@@ -51,6 +53,66 @@ def search():
     
     results = generate_results(query)
     return jsonify({"results": results})
+
+
+@app.route('/query', methods=['POST'])
+def query():
+    # 获取请求参数
+    request_data = request.json
+    page_num = request_data.get("pageNum", 1)
+    page_size = request_data.get("pageSize", 10)
+    status = request_data.get("STATUS")
+    qymc = request_data.get("QYMC")
+
+    results = []
+    company_id, chat_result = chat_response(qymc)
+    if chat_result is not None:
+        results = format_query_response(chat_result)
+    else:
+        return jsonify({"code": 404, "message": "未找到相关企业推荐信息"})
+
+    # 完善结果字段
+    filtered_data = []
+    for item in results['recommended_products']:
+        product = Product()
+        product.replace(item)
+        filtered_data.append(product.__dict__)
+
+    # 本地保存json格式的chat_response结果
+    save_data(company_id, chat_result)
+
+    # 分页逻辑
+    start = (page_num - 1) * page_size
+    end = start + page_size if len(filtered_data) > page_size else len(filtered_data)
+    paginated_data = filtered_data[start:end]
+
+    # 构建响应
+    response = {
+        "code": 200,
+        "message": "SUCCESS",
+        "serverTime": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "data": {
+            "total": len(filtered_data),
+            "list": paginated_data,
+            "pageNum": page_num,
+            "pageSize": page_size,
+            "size": len(paginated_data),
+            "startRow": start + 1,
+            "endRow": end,
+            "pages": (len(filtered_data) + page_size - 1) // page_size,
+            "prePage": page_num - 1 if page_num > 1 else 0,
+            "nextPage": page_num + 1 if end < len(filtered_data) else 0,
+            "isFirstPage": page_num == 1,
+            "isLastPage": end >= len(filtered_data),
+            "hasPreviousPage": page_num > 1,
+            "hasNextPage": end < len(filtered_data),
+            "navigatePages": 8,
+            "navigatepageNums": list(range(1, ((len(filtered_data) + page_size - 1) // page_size) + 1)),
+            "navigateFirstPage": 1,
+            "navigateLastPage": (len(filtered_data) + page_size - 1) // page_size
+        }
+    }
+    return jsonify(response)
 
 
 if __name__ == '__main__':

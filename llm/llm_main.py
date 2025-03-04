@@ -3,6 +3,7 @@ import json
 
 from config.log import get_logger
 from config.config import Config
+from config.common import TRANSLATION_DICT
 from db.db import get_data, query_data
 from llm.llm import LLM
 
@@ -102,6 +103,23 @@ def chat_response(query):
     return company_json['统一社会信用代码'], data
 
 
+def parsed_chat(chat_result):
+    # 提取 content 信息
+    content = chat_result['content']
+
+    # 分割 <think> 内容和回答部分
+    think_content = content.split('</think>')[0].replace('<think>', '').strip()
+    response_content = content.split('</think>')[1].strip()
+
+    # 去掉多余的标记（```json 和 ```）
+    json_content = response_content.strip('```json\n').strip('```').strip()
+
+    # 解析为 Python 对象（列表）
+    parsed_data = json.loads(json_content)
+
+    return think_content, response_content, parsed_data
+
+
 def format_product(product_name):
 
     config_obj = Config()
@@ -119,18 +137,7 @@ def format_product(product_name):
 
 def format_response(chat_result):
 
-    # 提取 content 信息
-    content = chat_result['content']
-
-    # 分割 <think> 内容和回答部分
-    think_content = content.split('</think>')[0].replace('<think>', '').strip()
-    response_content = content.split('</think>')[1].strip()
-
-    # 去掉多余的标记（```json 和 ```）
-    json_content = response_content.strip('```json\n').strip('```').strip()
-
-    # 解析为 Python 对象（列表）
-    parsed_data = json.loads(json_content)
+    think_content, response_content, parsed_data = parsed_chat(chat_result)
 
     # 提取回答中的几款产品信息
     products = []
@@ -152,8 +159,50 @@ def format_response(chat_result):
     return output_json
 
 
+def format_query_product(product_name):
+
+    config_obj = Config()
+
+    product_info = config_obj.match_product(product_name)
+    if product_info is not None:
+        return product_info
+    else:
+        return {'产品名称': product_name + '（未找到匹配产品信息）'}
+
+
+def format_query_response(chat_result):
+
+    think_content, response_content, parsed_data = parsed_chat(chat_result)
+
+    # 提取回答中的几款产品信息
+    products = []
+    for product in parsed_data:
+        # print(product)
+        products.append(format_query_product(product[list(product.keys())[0]]))
+        products[-1]['推荐理由'] = product[list(product.keys())[1]]
+        products[-1]['金融风控注意事项'] = product[list(product.keys())[2]]
+
+    # 将中文key转为英文key
+    products_eng = []
+    for product in products:
+        product_eng = {TRANSLATION_DICT[k]: v for k, v in product.items()}
+        products_eng.append(product_eng)
+
+    # 将提取的信息存储为 JSON 格式
+    output_json = {
+        'think_content': think_content,
+        'response_content': response_content,
+        'recommended_products': products_eng
+    }
+
+    return output_json
+
+
 # 使用示例
 if __name__ == "__main__":
     company_id, chat_result = chat_response(query="xx公司")
     output_json = format_response(chat_result)
+    print(output_json['recommended_products'])
+
+    output_json = format_query_response(chat_result)
     print(output_json['recommended_products'])
