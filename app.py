@@ -5,10 +5,13 @@ import datetime
 
 from db.db import save_data
 from config.common import Product
+from config.log import get_logger
 from llm.llm_main import chat_response, format_response, format_query_response
+from tax_data.tax_return_app import process_data, read_data
 
 
 app = Flask(__name__)
+logger = get_logger()
 
 
 def generate_results(query):
@@ -113,6 +116,61 @@ def query():
         }
     }
     return jsonify(response)
+
+
+@app.route('/callback', methods=['POST'])
+def callback_handler():
+    # 校验 Content-Type
+    if not request.is_json:
+        logger.warning("Invalid Content-Type, expected application/json")
+        return jsonify({"code": 300}), 300
+    
+    # 获取并校验 JSON 数据
+    data = request.get_json()
+    if not data or 'requestId' not in data or 'content' not in data:
+        logger.error("Missing required parameters: requestId or content")
+        return jsonify({"code": 400}), 400
+    
+    # 提取参数
+    request_id = data['requestId']
+    content = data['content']
+    
+    # 处理业务逻辑
+    success = process_data(request_id, content)
+    # read_data("2B26AEC5-D79F-450D-87E8-46F74489A0AD")
+    content = read_data(request_id)
+    
+    # 注意：处理成功返回 200
+    return jsonify({
+        "code": 200,
+        "message": "Request received",
+        "requestId": request_id
+    }), 200
+
+
+@app.route('/fileback', methods=['POST'])
+def fileback_handler():
+    # 校验 Content-Type
+    if not request.is_json:
+        logger.warning("Invalid Content-Type, expected application/json")
+        return jsonify({"code": 300}), 300
+    
+    # 获取并校验 JSON 数据
+    data = request.get_json()
+    if not data or 'requestId' not in data:
+        logger.error("Missing required parameters: requestId")
+        return jsonify({"code": 400}), 400
+    
+    # 提取参数
+    request_id = data['requestId']
+    content = read_data(request_id)
+    
+    # 注意：处理成功返回 200
+    return jsonify({
+        "code": 200,
+        "requestId": request_id,
+        "message": content
+    }), 200
 
 
 if __name__ == '__main__':

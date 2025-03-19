@@ -34,11 +34,30 @@ def personal_question(company_info, product_num=3):
 
 
 def whole_prompt(product_list, rule_list, company_json, product_num=3):
-    return f"""请帮我根据这家企业的信息：{company_json}，参考如下规则：
-    {rule_list}，为这家企业从下面的{len(product_list)}款贷款产品列表：
-    {product_list}中推荐最匹配的{product_num}款产品。回答中必须包含
-    每款推荐产品的产品名称，推荐理由，金融风控注意事项3部分信息，
-    以json格式回答。"""
+    # return f"""请帮我根据这家企业的信息：{company_json}，参考如下规则：
+    # {rule_list}，为这家企业从下面的{len(product_list)}款贷款产品列表：
+    # {product_list}中推荐最匹配的{product_num}款产品。回答中必须包含
+    # 每款推荐产品的产品名称，推荐理由，金融风控注意事项3部分信息，
+    # 以json格式回答。"""
+    return (
+        "你是一个专业的金融贷款产品推荐师，负责为企业推荐金融贷款产品，"
+        "请根据我提供的数据回答问题。遵循以下规则：\n"
+        "1. 先读取企业信息\n"
+        "2. 再读取产品列表的完整信息\n"
+        "3. 然后读取规则信息\n"
+        "4. 最后根据规则信息，为第一步读取的企业推荐"
+        f"产品列表中最合适的{product_num}款产品。\n\n"
+        "【企业信息】\n"
+        f"{company_json}\n\n"
+        "【产品列表】\n"
+        f"{product_list}\n\n"
+        "【规则信息】\n"
+        f"{rule_list}\n\n"
+        f"请为{company_json}推荐我提供的产品列表中"
+        f"最合适的{product_num}款产品。"
+        "在回答中必须包含每款推荐产品的产品名称，推荐理由，"
+        "金融风控注意事项三部分信息。并以json格式回答。"
+    )
 
 
 def is_chinese_company_name_strict(input_str):
@@ -70,6 +89,10 @@ def chat_response(query):
 
     config_obj = Config()
     company_json = config_obj.match_company(query)
+    if company_json is not None:
+        company_json = {"企业名称":company_json["企业名称"], 
+                        "统一社会信用代码":company_json["统一社会信用代码"],
+                        "企业所属行业":company_json["企业所属行业"]}
     if company_json is None:
         if is_chinese_company_name_strict(query):
             # 根据企业名称进行推荐
@@ -200,7 +223,7 @@ def format_query_response(chat_result):
 
 # 使用示例
 if __name__ == "__main__":
-    company_id, chat_result = chat_response(query="xx公司")
+    company_id, chat_result = chat_response(query="西宁爱里食品有限公司")
     output_json = format_response(chat_result)
     print(output_json['recommended_products'])
 
