@@ -164,11 +164,17 @@ def format_response(chat_result):
 
     # 提取回答中的几款产品信息
     products = []
-    for product in parsed_data:
-        # print(product)
-        products.append(format_product(product[list(product.keys())[0]]))
-        products[-1]['推荐理由'] = product[list(product.keys())[1]]
-        products[-1]['金融风控注意事项'] = product[list(product.keys())[2]]
+    if isinstance(parsed_data, dict) and len(parsed_data)==1:
+        parsed_data = parsed_data[list(parsed_data.keys())[0]]
+    
+    if isinstance(parsed_data, list):
+        for product in parsed_data:
+            # print(product)
+            products.append(format_product(product[list(product.keys())[0]]))
+            products[-1]['推荐理由'] = product[list(product.keys())[1]]
+            products[-1]['金融风控注意事项'] = product[list(product.keys())[2]]
+    else:
+        raise Exception('parsed_data format error.')
 
     # 将提取的信息存储为 JSON 格式
     output_json = {
