@@ -55,18 +55,18 @@ class Config:
             '7': '应收账款'
         }
         if '担保方式' in matched_product:
-            matched_product['担保方式'] = matched_product['担保方式'].split(',')
-            matched_product['担保方式'] = '/'.join([GUARANT_TYPE[guarant_type] for 
-                                          guarant_type in matched_product['担保方式']])
+            matched_product_list = matched_product['担保方式'].split(',')
+            matched_product['担保方式名称'] = '/'.join([GUARANT_TYPE[guarant_type] for 
+                                          guarant_type in matched_product_list])
 
         APPLY_CUST = {
             '1': '中小微企业',
             '2': '个体工商户'
         }
         if '适用主体/适用客户' in matched_product:
-            matched_product['适用主体/适用客户'] = matched_product['适用主体/适用客户'].split(',')
-            matched_product['适用主体/适用客户'] = '/'.join([APPLY_CUST[apply_cust] for 
-                                          apply_cust in matched_product['适用主体/适用客户']])
+            matched_product_list = matched_product['适用主体/适用客户'].split(',')
+            matched_product['适用主体/适用客户名称'] = '/'.join([APPLY_CUST[apply_cust] for 
+                                          apply_cust in matched_product_list])
 
         # 输出匹配的产品信息
         if matched_product:

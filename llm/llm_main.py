@@ -151,7 +151,7 @@ def format_product(product_name):
     if product_info is not None:
         return {
             '产品名称': f'''{product_info['银行名称']} {product_info['产品名称']} ''' + \
-            f'''{product_info['担保方式']}\n{product_info['显示额度']}万 ''' + \
+            f'''{product_info['担保方式名称']}\n{product_info['显示额度']}万 ''' + \
             f'''{product_info['显示周期']}月 {product_info['显示利率']}%'''
             }
     else:

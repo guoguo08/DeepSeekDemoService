@@ -51,6 +51,8 @@ TRANSLATION_DICT = {
     "CPLY": "CPLY",
     "RECOMMEND_REASON": "推荐理由",
     "FINANCIAL_RISK_NOTES": "金融风控注意事项",
+    "GUARANT_TYPE_NAME": "担保方式名称",
+    "APPLY_CUST_NAME": "适用主体/适用客户名称",
     "产品编号": "ID",
     "银行代码": "ORG_CODE",
     "银行名称": "ORG_NAME",
@@ -101,6 +103,8 @@ TRANSLATION_DICT = {
     "创建编号": "CREATE_ID",
     "推荐理由": "RECOMMEND_REASON",
     "金融风控注意事项": "FINANCIAL_RISK_NOTES",
+    "担保方式名称": "GUARANT_TYPE_NAME",
+    "适用主体/适用客户名称": "APPLY_CUST_NAME",
 }
 
 
