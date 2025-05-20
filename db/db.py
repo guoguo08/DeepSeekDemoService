@@ -76,6 +76,15 @@ def query_data(condition: str = '1=1') -> Dict[str, Any]:
         return {key: json.loads(value) for key, value in results}
 
 
+def print_table_keys():
+
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute(f'SELECT key, value FROM key_value_store')
+        results = cursor.fetchall()
+        return [key for key, value in results]
+
+
 # 示例用法
 if __name__ == '__main__':
     # 初始化数据库
@@ -96,3 +105,6 @@ if __name__ == '__main__':
     # 删除数据
     delete_data('user1')
     print(get_data('user1'))  # 输出: None
+
+    # 打印所有键
+    print_table_keys()

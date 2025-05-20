@@ -21,6 +21,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 # deepseek
 ollama run deepseek-r1:1.5b
 # /usr/share/ollama/.ollama/models/
+# /root/.ollama/models/blobs/
 
 # 启动deepseek
 ollama run deepseek-r1:1.5b

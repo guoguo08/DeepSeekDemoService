@@ -7,6 +7,7 @@ from db.db import save_data
 from config.common import Product
 from config.log import get_logger
 from llm.llm_main import chat_response, format_response, format_query_response
+from llm.llm_model import chat_analysis_response
 from tax_data.tax_return_app import process_data, read_data
 
 
@@ -44,11 +45,13 @@ def generate_results(query):
 
 
 @app.route('/')
+# 深度搜索主页
 def index():
     return render_template('index.html')
 
 
 @app.route('/search', methods=['POST'])
+# 深度搜索功能接口
 def search():
     query = request.form.get('q', '').strip()
     if not query:
@@ -59,6 +62,7 @@ def search():
 
 
 @app.route('/query', methods=['POST'])
+# AI智能推荐查询接口（甘霖平台）
 def query():
     # 获取请求参数
     request_data = request.json
@@ -118,7 +122,33 @@ def query():
     return jsonify(response)
 
 
+@app.route('/data_analysis', methods=['POST'])
+def data_analysis():
+    # 获取请求参数
+    request_data = request.json
+    question = request_data.get("question")
+    logger.info(f"question: {question}.")
+    if not question:
+        return jsonify({"error": "问题不能为空"}), 400
+    # 处理数据分析请求
+    if question == '2025年中标企业有多少家？':
+        results = {
+            "content": "SELECT COUNT(DISTINCT unified_social_credit_code) AS winning_companies_count\n    FROM company_bidding_info\n    WHERE EXTRACT(YEAR FROM winning_date) = 2025;",
+            "role": "assistant"
+	    }
+    elif question == '统计各年份中标企业有多少家？':
+        results = {
+            "content": "SELECT YEAR(winning_date) AS year, COUNT(DISTINCT unified_social_credit_code) AS company_count FROM company_bidding_info GROUP BY YEAR(winning_date) ORDER BY year;",
+            "role": "assistant"
+        }
+    else:
+        results = chat_analysis_response(question)
+    results['content'] = results['content'].replace('\n', ' ')
+    return jsonify({"results": results})
+
+
 @app.route('/callback', methods=['POST'])
+# 税务查询回调接口（存储查询结果到文件）
 def callback_handler():
     # 校验 Content-Type
     if not request.is_json:
@@ -149,6 +179,7 @@ def callback_handler():
 
 
 @app.route('/fileback', methods=['POST'])
+# 税务查询内容接口（读取文件内容，返回json格式）
 def fileback_handler():
     # 校验 Content-Type
     if not request.is_json:

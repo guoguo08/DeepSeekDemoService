@@ -1,15 +1,23 @@
-# BASE_URL: "http://localhost:11434/api/"
-BASE_URL: "http://192.168.10.67:11434/api/"
+BASE_URL: "http://localhost:11434/api/"
+# BASE_URL: "http://192.168.10.58:11434/api/"
 
-# LLM_MODEL: "deepseek-r1:1.5b"
-LLM_MODEL: "deepseek-r1:14b"
+LLM_MODEL: "deepseek-r1:1.5b"
+# LLM_MODEL: "deepseek-r1:14b"
 
 # product_num
 PRODUCT_NUM: 3
 
 # FILE PATH
-# company_path: "./config/company.csv"
-# product_path: "./config/product.csv"
-# rule_path: "./config/rule.csv"
-company_path: "./config/company_demo.csv"
-product_path: "./config/product_demo.csv"
+company_path: "./data/company.csv"
+product_path: "./data/product.csv"
+rule_path: "./data/rule.csv"
+# company_path: "./config/company_demo.csv"
+# product_path: "./config/product_demo.csv"
+
+# MYSQL
+db_config:
+  host: "139.170.138.90:33306"
+  user: "wenshu"
+  password: "456agagafd"
+  database: "ws_zcd"
+  charset: "utf8mb4"
