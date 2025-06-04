@@ -1,0 +1,1 @@
+nohup python3 run_model.py > start_model.out 2>&1 &
